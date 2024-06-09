@@ -1,14 +1,15 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/widgets/button/custom_button.dart';
-import 'package:mh_core/widgets/network_image/network_image.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
+import 'package:perfecto/controller/home_api_controller.dart';
+import 'package:perfecto/controller/user_controller.dart';
 import 'package:perfecto/pages/checkout-page/checkout_page.dart';
 import 'package:perfecto/pages/home/widgets/home_top_widget.dart';
 import 'package:perfecto/pages/my-cart/apply_cuppon_reward.dart';
 import 'package:perfecto/pages/my-cart/cart_controller.dart';
+import 'package:perfecto/pages/profile/my-orders/controller/address_controller.dart';
 import 'package:perfecto/shared/custom_sized_box.dart';
 import 'package:perfecto/theme/theme_data.dart';
 
@@ -39,20 +40,20 @@ class CartScreen extends StatelessWidget {
                     },
                   ),
                   CustomSizedBox.space8W,
-                  Text(
+                  const Text(
                     'My Bag',
                     style: AppTheme.textStyleSemiBoldBlack16,
                   ),
                   CustomSizedBox.space4W,
                   Text(
-                    '(3 Items)',
+                    '(${UserController.to.cartList.length} Items)',
                     style: AppTheme.textStyleNormalFadeBlack12,
-                  )
+                  ),
                 ],
               ),
               isSearchInclude: false,
             ),
-            !CartController.to.isbagEmpty.value
+            UserController.to.cartList.isNotEmpty
                 ? Expanded(
                     child: ListView(
                       padding: EdgeInsets.zero,
@@ -61,29 +62,36 @@ class CartScreen extends StatelessWidget {
                           padding: EdgeInsets.zero,
                           shrinkWrap: true,
                           primary: false,
-                          itemBuilder: (context, index) => CartWidget(),
-                          itemCount: 3,
+                          itemBuilder: (context, index) {
+                            final cartModel = UserController.to.cartList[index];
+                            return CartWidget(
+                              cartModel: UserController.to.cartList[index],
+                            );
+                          },
+                          itemCount: UserController.to.cartList.length,
                         ),
                         GestureDetector(
                             onTap: () {
+                              CartController.to.couponController.text = HomeApiController.to.couponCode.value;
                               Get.toNamed(ApplyCupponRewardScreen.routeName, arguments: 'coupon');
                             },
-                            child: CouponsWidget()),
+                            child: const CouponsWidget()),
                         GestureDetector(
                           onTap: () {
+                            CartController.to.couponController.text = HomeApiController.to.rewardPointApply.value;
                             Get.toNamed(ApplyCupponRewardScreen.routeName);
                           },
-                          child: CouponsWidget(img: AssetsConstant.rewardIcon, title: 'Reward Points', isRewardPoint: true, subtitle: 'Apply now and save extra!'),
+                          child: const CouponsWidget(img: AssetsConstant.rewardIcon, title: 'Reward Points', isRewardPoint: true, subtitle: 'Apply now and save extra!'),
                         ),
                         Container(
-                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(4), color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(.24), blurRadius: 2)]),
-                            padding: EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(12),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                const Text(
                                   'Order Summary',
                                   style: AppTheme.textStyleSemiBoldBlack16,
                                 ),
@@ -93,61 +101,87 @@ class CartScreen extends StatelessWidget {
                                     RichText(
                                         text: TextSpan(text: 'Items Subtotal', style: AppTheme.textStyleMediumBlack12, children: [
                                       TextSpan(
-                                        text: ' (3 Items)',
-                                        style: TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
+                                        text: ' (${UserController.to.cartList.length} Items)',
+                                        style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
                                       )
                                     ])),
-                                    Spacer(),
+                                    const Spacer(),
                                     Text(
-                                      '৳ 1,650',
+                                      '৳ ${UserController.to.cartTotalPrice().toStringAsFixed(2)}',
                                       style: AppTheme.textStyleMediumBlack12,
                                     ),
                                   ],
                                 ),
                                 CustomSizedBox.space8H,
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Discount',
-                                      style: AppTheme.textStyleMediumBlack10,
-                                    ),
-                                    Spacer(),
-                                    Text(
-                                      '-৳ 250',
-                                      style: AppTheme.textStyleMediumBlack12,
-                                    ),
-                                  ],
-                                ),
-                                CustomSizedBox.space8H,
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Shipping Fee',
-                                      style: AppTheme.textStyleMediumBlack10,
-                                    ),
-                                    Spacer(),
-                                    Text(
-                                      '৳ 1,650',
-                                      style: AppTheme.textStyleMediumBlack12,
-                                    )
-                                  ],
-                                ),
-                                CustomSizedBox.space8H,
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Reward Points Discount',
-                                      style: AppTheme.textStyleMediumBlack10,
-                                    ),
-                                    Spacer(),
-                                    Text(
-                                      '-৳ 50',
-                                      style: AppTheme.textStyleMediumBlack12,
-                                    ),
-                                  ],
-                                ),
-                                CustomSizedBox.space4H,
-                                Divider(
+                                // Row(
+                                //   children: [
+                                //     const Text(
+                                //       'Discount',
+                                //       style: AppTheme.textStyleMediumBlack10,
+                                //     ),
+                                //     const Spacer(),
+                                //     Text(
+                                //       '-৳ ${UserController.to.cartTotalDiscountPrice().toStringAsFixed(2)}',
+                                //       style: AppTheme.textStyleMediumBlack12,
+                                //     ),
+                                //   ],
+                                // ),
+                                // CustomSizedBox.space8H,
+                                if (UserController.to.upToDiscount.value.toDouble() > 0) ...[
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Discount (Upto Sale Offer)',
+                                        style: AppTheme.textStyleMediumBlack10,
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '-৳ ${UserController.to.upToDiscount.value.toDouble().toStringAsFixed(2)}',
+                                        style: AppTheme.textStyleMediumBlack12,
+                                      ),
+                                    ],
+                                  ),
+                                  CustomSizedBox.space8H,
+                                ],
+                                if (HomeApiController.to.couponInfo.value.couponCode != null &&
+                                    HomeApiController.to.couponInfo.value.couponCode!.isNotEmpty &&
+                                    HomeApiController.to.couponInfo.value.minimumExpenses != null &&
+                                    HomeApiController.to.couponInfo.value.minimumExpenses!.isNotEmpty &&
+                                    (UserController.to.cartTotalPrice() /* - UserController.to.cartTotalDiscountPrice()*/) >=
+                                        double.parse(HomeApiController.to.couponInfo.value.minimumExpenses!)) ...[
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Cupon',
+                                        style: AppTheme.textStyleMediumBlack10,
+                                      ),
+                                      Spacer(),
+                                      Text(
+                                        '-৳ ${HomeApiController.to.couponInfo.value.amount!}',
+                                        style: AppTheme.textStyleMediumBlack12,
+                                      )
+                                    ],
+                                  ),
+                                  CustomSizedBox.space8H,
+                                ],
+                                // if(HomeApiController.to.rewardPointInfo.value.rewardPointValue!=null && HomeApiController.to.rewardPointInfo.value.rewardPointValue!.isNotEmpty && UserController.to.cartTotalPrice() - UserController.to.cartTotalDiscountPrice()>=double.parse(HomeApiController.to.rewardPointInfo.value.rewardPointValue!)
+                                if (HomeApiController.to.rewardPointApply.value != '0') ...[
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Reward Points Discount',
+                                        style: AppTheme.textStyleMediumBlack10,
+                                      ),
+                                      Spacer(),
+                                      Text(
+                                        '-৳ ${UserController.to.rewardPointCalculation(HomeApiController.to.rewardPointInfo.value.rewardPointValue ?? '0', HomeApiController.to.rewardPointApply.value, HomeApiController.to.rewardPointInfo.value.rewardPoint ?? '0').toStringAsFixed(2)}',
+                                        style: AppTheme.textStyleMediumBlack12,
+                                      ),
+                                    ],
+                                  ),
+                                  CustomSizedBox.space4H,
+                                ],
+                                const Divider(
                                   color: Color(0xffECECEC),
                                   thickness: 1,
                                 ),
@@ -158,9 +192,9 @@ class CartScreen extends StatelessWidget {
                                       'Total',
                                       style: AppTheme.textStyleSemiBoldBlack14,
                                     ),
-                                    Spacer(),
+                                    const Spacer(),
                                     Text(
-                                      '৳ 1,450',
+                                      '৳ ${UserController.to.cartTotalPriceWithCouponAndReward().toStringAsFixed(2)}',
                                       style: AppTheme.textStyleSemiBoldBlack14,
                                     ),
                                   ],
@@ -176,16 +210,16 @@ class CartScreen extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Spacer(),
+                          const Spacer(),
                           Image.asset(AssetsConstant.emptyBag, height: 215),
                           CustomSizedBox.space20H,
-                          Text(
+                          const Text(
                             'Your Shopping Bag is Empty',
                             style: AppTheme.textStyleSemiBoldBlack20,
                             textAlign: TextAlign.center,
                           ),
                           CustomSizedBox.space20H,
-                          Text(
+                          const Text(
                             'Looks like you haven’t made your choice yet, add all your favourite products',
                             style: AppTheme.textStyleNormalBlack14,
                             textAlign: TextAlign.center,
@@ -195,10 +229,11 @@ class CartScreen extends StatelessWidget {
                             marginHorizontal: 0,
                             marginVertical: 20,
                             onPressed: () {
+                              Get.back();
                               // Your button's onPressed logic here
                             },
                           ),
-                          Spacer(),
+                          const Spacer(),
                         ],
                       ),
                     ),
@@ -206,12 +241,12 @@ class CartScreen extends StatelessWidget {
             // CustomSizedBox.space8H,
           ],
         ),
-        bottomNavigationBar: !CartController.to.isbagEmpty.value
+        bottomNavigationBar: UserController.to.cartList.isNotEmpty
             ? Container(
                 margin: EdgeInsets.zero,
                 height: 100,
                 decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(.2), blurRadius: 4)]),
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -224,7 +259,7 @@ class CartScreen extends StatelessWidget {
                           style: AppTheme.textStyleMediumBlack12,
                         ),
                         Text(
-                          '৳ 1,450',
+                          '৳ ${UserController.to.cartTotalPriceWithCouponAndReward().toStringAsFixed(2)}',
                           style: AppTheme.textStyleBoldBlack20,
                         )
                       ],
@@ -237,6 +272,11 @@ class CartScreen extends StatelessWidget {
                       height: 50,
                       onPressed: () {
                         // CartController.to.isbagEmpty.value=true;
+                        try {
+                          AddressController.to.setData();
+                        } catch (e) {
+                          globalLogger.e(e);
+                        }
                         Get.toNamed(CheckoutScreen.routeName);
                       },
                       label: 'Proceed',
@@ -247,7 +287,7 @@ class CartScreen extends StatelessWidget {
                   ],
                 ),
               )
-            : SizedBox.shrink(),
+            : const SizedBox.shrink(),
       );
     });
   }

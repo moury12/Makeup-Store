@@ -2,10 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/utils/global.dart';
-import 'package:mh_core/widgets/button/custom_button.dart';
-import 'package:mh_core/widgets/network_image/network_image.dart';
-import 'package:mh_core/widgets/textfield/custom_textfield.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/controller/user_controller.dart';
@@ -95,6 +92,7 @@ class EditProfileScreen extends StatelessWidget {
                         focusColor: Colors.black,
                       ),
                       CustomTextField(
+                        isEnable: userModel!.email == null || userModel!.email!.isEmpty,
                         marginVertical: 6,
                         hintText: 'Enter your email',
                         labelText: 'Email Address',
@@ -104,6 +102,7 @@ class EditProfileScreen extends StatelessWidget {
                         focusColor: Colors.black,
                       ),
                       CustomTextField(
+                        isEnable: userModel!.phone == null || userModel!.phone!.isEmpty,
                         marginVertical: 6,
                         hintText: 'Enter your phone',
                         labelText: 'Phone Number',

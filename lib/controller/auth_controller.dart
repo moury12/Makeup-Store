@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:mh_core/services/api_service.dart';
 import 'package:mh_core/utils/global.dart';
 import 'package:perfecto/controller/home_api_controller.dart';
 import 'package:perfecto/controller/user_controller.dart';
 
 import 'package:perfecto/pages/auth/change_password_page.dart';
+import 'package:perfecto/pages/chat/chat_controller.dart';
+import 'package:perfecto/pages/chat/chat_controller.dart';
 import 'package:perfecto/pages/page_with_navigation.dart';
+import 'package:perfecto/pages/profile/my-orders/controller/address_controller.dart';
 import 'package:perfecto/services/auth_service.dart';
 import '../DB/database_helper.dart';
 import '../main.dart';
@@ -32,8 +35,10 @@ class AuthController extends GetxController {
   TextEditingController passwordForNewController = TextEditingController();
   TextEditingController passwordLoginController = TextEditingController();
   TextEditingController passwordConfirmController = TextEditingController();
-  TextEditingController passwordForChangeConfirmController = TextEditingController();
-  TextEditingController passwordForNewConfirmController = TextEditingController();
+  TextEditingController passwordForChangeConfirmController =
+      TextEditingController();
+  TextEditingController passwordForNewConfirmController =
+      TextEditingController();
 
   TextEditingController otpController = TextEditingController();
   TextEditingController otpForgetPassController = TextEditingController();
@@ -79,23 +84,44 @@ class AuthController extends GetxController {
   RxBool isLoggedIn = false.obs;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   LogInType? currentLoginType;
+
+  // Telephony telephony = Telephony.instance;
+
   @override
   Future<void> onInit() async {
-    final loginUser = await dbHelper.getSingleItemAll(tableName: DatabaseHelper.loginTable, whereKey: DatabaseHelper.isLogIn, whereValue: 1);
+    final loginUser = await dbHelper.getSingleItemAll(
+        tableName: DatabaseHelper.loginTable,
+        whereKey: DatabaseHelper.isLogIn,
+        whereValue: 1);
     globalLogger.d(loginUser);
     isLoggedIn.value = loginUser.isNotEmpty;
     if (isLoggedIn.value) {
       callBack401Func = logoutFunc;
-      final user =
-          await dbHelper.getSingleItemSpecific(tableName: DatabaseHelper.loginTable, selectedItem: [DatabaseHelper.accessToken], whereKey: DatabaseHelper.isLogIn, whereValue: 1);
+      final user = await dbHelper.getSingleItemSpecific(
+          tableName: DatabaseHelper.loginTable,
+          selectedItem: [DatabaseHelper.accessToken],
+          whereKey: DatabaseHelper.isLogIn,
+          whereValue: 1);
 
-      ServiceAPI.setAuthToken(user[DatabaseHelper.accessToken]);
-      globalLogger.d(user[DatabaseHelper.accessToken], 'token');
+      Service.setAuthToken(user[DatabaseHelper.accessToken]);
       Get.put<UserController>(UserController(), permanent: true);
-      Get.put<HomeApiController>(HomeApiController(), permanent: true);
-      // UserController.to.getUserInfoCall();
+      Get.put<ChatController>(ChatController(), permanent: true);
       // globalLogger.d(user, user.runtimeType);
     }
+
+    // telephony.listenIncomingSms(
+    //   onNewMessage: (SmsMessage message) {
+    //     // get the message
+    //     String sms = message.body.toString();
+    //     if (message.body!.contains('[Perfecto]')) {
+    //       String otpcode = sms.replaceAll(new RegExp(r'[^0-9]'), '');
+    //       otpController.text = otpcode;
+    //     } else {
+    //       globalLogger.d("Normal message.");
+    //     }
+    //   },
+    //   listenInBackground: false,
+    // );
     super.onInit();
   }
 
@@ -125,19 +151,27 @@ class AuthController extends GetxController {
   Future<void> logoutFunc() async {
     _delete();
     Get.delete<UserController>(force: true);
-    ServiceAPI.setAuthToken('');
-    if (currentLoginType == LogInType.google) {
+    Get.delete<AddressController>(force: true);
+    Get.delete<ChatController>(force: true);
+    Service.setAuthToken('');
+    try {
       _googleSignIn.signOut();
+    } catch (e) {
+      globalLogger.e(e);
     }
-    if (currentLoginType == LogInType.facebook) {
-      FacebookAuth.instance.logOut();
-    }
+    // if (currentLoginType == LogInType.google) {
+    //   _googleSignIn.signOut();
+    // }
+    // if (currentLoginType == LogInType.facebook) {
+    //   FacebookAuth.instance.logOut();
+    // }
     isLoggedIn.value = false;
     NavigationController.to.selectedIndex.value = 0;
     Get.offAllNamed(MainHomeScreen.routeName);
   }
 
-  Future<bool> registerRequest(String fName, String lName, String email, String phone, String password, String cPassword) async {
+  Future<bool> registerRequest(String fName, String lName, String email,
+      String phone, String password, String cPassword) async {
     registerEmail(email);
     final isCreated = await AuthService.registerCall({
       "f_name": fName,
@@ -158,7 +192,15 @@ class AuthController extends GetxController {
   }
 
   Future<bool> loginRequest(
-      {String? email, String? phone, String? password, String? otp, String? name, String? googleId, String? fbId, String? avatar, required LogInType type}) async {
+      {String? email,
+      String? phone,
+      String? password,
+      String? otp,
+      String? name,
+      String? googleId,
+      String? fbId,
+      String? avatar,
+      required LogInType type}) async {
     dynamic body = {};
     if (type == LogInType.email) {
       body = {
@@ -193,11 +235,13 @@ class AuthController extends GetxController {
     }
     final isCreated = await AuthService.loginCall(body, type: type);
     final token = isCreated['token'];
-    globalLogger.d(token, 'Token');
     if (type != LogInType.phone && isCreated.isNotEmpty) {
-      ServiceAPI.setAuthToken(token);
+      Service.setAuthToken(token);
       currentLoginType = type;
-      _insert(accessToken: token, phone: isCreated['phone'] ?? '', loginType: type.name);
+      _insert(
+          accessToken: token,
+          phone: isCreated['phone'] ?? '',
+          loginType: type.name);
       isLoggedIn.value = true;
 
       showSnackBar(
@@ -207,16 +251,22 @@ class AuthController extends GetxController {
       unAuthenticateIndex.value = -1;
 
       Get.put<UserController>(UserController(), permanent: true);
-      // UserController.to.getUserInfoCall();
+      Get.put<ChatController>(ChatController(), permanent: true);
       Get.back();
       // afterLogin(isCreated);
-    } else if (type == LogInType.phone && isCreated.isNotEmpty) {
+    } else if (type == LogInType.phone && isCreated['otp'] != null) {
+      AuthController.to.isOtp.value = true;
+      showSnackBar(
+        msg: 'Use OTP to Login.',
+      );
+      update();
       globalLogger.d(isCreated['otp']);
     }
     return isCreated.isNotEmpty;
   }
 
-  void _insert({String? phone, required String accessToken, String? loginType}) async {
+  void _insert(
+      {String? phone, required String accessToken, String? loginType}) async {
     // row to insert
     Map<String, dynamic> row = {
       DatabaseHelper.userMobile: phone ?? '',
@@ -241,11 +291,11 @@ class AuthController extends GetxController {
   }
 
   Future<void> verifyEmailForgetPassword(String otp) async {
-    final verifyEmail = await AuthService.verifyEmail({"email": registerEmail.value, "otp": otp});
+    final verifyEmail = await AuthService.verifyEmail(
+        {"email": registerEmail.value, "otp": otp});
     if (verifyEmail.isNotEmpty) {
       final token = verifyEmail['token'];
-      globalLogger.d(token, 'Token');
-      ServiceAPI.setAuthToken(token);
+      Service.setAuthToken(token);
       _insert(accessToken: token);
       showSnackBar(msg: '"Otp verify successfully."');
       Get.offAndToNamed(ChangePasswordScreen.routeName);
@@ -256,7 +306,6 @@ class AuthController extends GetxController {
     String password,
     String cPassword,
   ) async {
-    globalLogger.d(registerEmail.value, 'email');
     // getProgressDialog('Verify and Changing Password');
     bool isVerified = await AuthService.changePassword({
       "email": registerEmail.value,
@@ -279,35 +328,36 @@ class AuthController extends GetxController {
   }
 
   Map<String, dynamic>? userData;
-  AccessToken? accessToken;
+
+  // AccessToken? accessToken;
   bool _checking = true;
-  Future<bool> loginWithFacebook() async {
-    final LoginResult result = await FacebookAuth.instance.login(
-      permissions: ['email', 'public_profile', 'user_birthday', 'user_friends', 'user_gender', 'user_link'],
-    ); // by default we request the email and the public profile
-    // loginBehavior is only supported for Android devices, for ios it will be ignored
-    // final result = await FacebookAuth.instance.login(
-    //   permissions: ['email', 'public_profile', 'user_birthday', 'user_friends', 'user_gender', 'user_link'],
-    //   loginBehavior: LoginBehavior
-    //       .DIALOG_ONLY, // (only android) show an authentication dialog instead of redirecting to facebook app
-    // );
 
-    if (result.status == LoginStatus.success) {
-      accessToken = result.accessToken;
-
-      // get the user data
-      // by default we get the userId, email,name and picture
-      final userDataTemp = await FacebookAuth.instance.getUserData();
-      // final userData = await FacebookAuth.instance.getUserData(fields: "email,birthday,friends,gender,link");
-      userData = userDataTemp;
-      globalLogger.d(userData, 'userData');
-      return true;
-    } else {
-      print(result.status);
-      print(result.message);
-    }
-    return false;
-  }
+  // Future<bool> loginWithFacebook() async {
+  //   final LoginResult result = await FacebookAuth.instance.login(
+  //     permissions: ['email', 'public_profile', 'user_birthday', 'user_friends', 'user_gender', 'user_link'],
+  //   ); // by default we request the email and the public profile
+  //   // loginBehavior is only supported for Android devices, for ios it will be ignored
+  //   // final result = await FacebookAuth.instance.login(
+  //   //   permissions: ['email', 'public_profile', 'user_birthday', 'user_friends', 'user_gender', 'user_link'],
+  //   //   loginBehavior: LoginBehavior
+  //   //       .DIALOG_ONLY, // (only android) show an authentication dialog instead of redirecting to facebook app
+  //   // );
+  //
+  //   if (result.status == LoginStatus.success) {
+  //     accessToken = result.accessToken;
+  //
+  //     // get the user data
+  //     // by default we get the userId, email,name and picture
+  //     final userDataTemp = await FacebookAuth.instance.getUserData();
+  //     // final userData = await FacebookAuth.instance.getUserData(fields: "email,birthday,friends,gender,link");
+  //     userData = userDataTemp;
+  //     return true;
+  //   } else {
+  //     print(result.status);
+  //     print(result.message);
+  //   }
+  //   return false;
+  // }
 
   // Future<void> loginWithFacebook() async {
   //   try {
@@ -326,12 +376,16 @@ class AuthController extends GetxController {
   void _delete() async {
     // Assuming that the number of rows is the id for the last row.
     // final id = await dbHelper.queryRowCount();
-    final rowsDeleted = await dbHelper.delete(DatabaseHelper.accessToken, DatabaseHelper.loginTable, ServiceAPI.getToken);
-    globalLogger.d('deleted $rowsDeleted row(s): User ${ServiceAPI.getToken}');
+    final rowsDeleted = await dbHelper.delete(DatabaseHelper.accessToken,
+        DatabaseHelper.loginTable, Service.getToken);
+    globalLogger.d('deleted $rowsDeleted row(s): User ${Service.getToken}');
   }
 
   Future<void> logout() async {
-    showSnackBar(msg: 'Loging out..', actionLabel: '', actionLabelColor: Colors.transparent);
+    showSnackBar(
+        msg: 'Loging out..',
+        actionLabel: '',
+        actionLabelColor: Colors.transparent);
     final logingOut = await AuthService.logoutCall(
       forceLogout: () {
         logoutFunc();

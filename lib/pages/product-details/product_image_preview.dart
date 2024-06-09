@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/widgets/network_image/network_image.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/drawer/custom_drawer.dart';
@@ -16,7 +16,8 @@ class ProductImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(drawer: CustomDrawer(),
+    return Scaffold(
+      drawer: CustomDrawer(),
       backgroundColor: AppColors.kBackgroundColor,
       body: Column(
         children: [
@@ -27,22 +28,28 @@ class ProductImagePreview extends StatelessWidget {
               child: ListView(
             padding: EdgeInsets.zero,
             children: [
-               Obx(
-                 () {
-                   return CustomNetworkImage(
-                        networkImagePath: '',
-                        fit: BoxFit.fill,
-                        errorImagePath:ProductDetailsController.to.displayUrl.value.isEmpty?AssetsConstant.megaDeals1:ProductDetailsController.to.displayUrl.value,
-                        width: double.infinity,
-                        height: 400,
-                        borderRadius: 0,
-                      );
-                 }
-               ),
+              Obx(() {
+                return CustomNetworkImage(
+                  networkImagePath: ProductDetailsController.to.product.value.variationType == 'shade'
+                      ? ProductDetailsController.to.product.value.productShades!
+                          .firstWhere((element) => element.shadeId == ProductDetailsController.to.selectedVariation.value)
+                          .productShadeImages![ProductDetailsController.to.selectedImageForPage.value]
+                          .productShadeImage!
+                      : ProductDetailsController.to.product.value.productSizes!
+                          .firstWhere((element) => element.sizeId == ProductDetailsController.to.selectedVariation.value)
+                          .productSizeImages![ProductDetailsController.to.selectedImageForPage.value]
+                          .productSizeImage!,
+                  fit: BoxFit.fill,
+                  errorImagePath: ProductDetailsController.to.displayUrl.value.isEmpty ? AssetsConstant.megaDeals1 : ProductDetailsController.to.displayUrl.value,
+                  width: double.infinity,
+                  height: 400,
+                  borderRadius: 0,
+                );
+              }),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
                 child: Text(
-                  'Lakme Absolute Skin Dew Color Sensational Ultimattes Satin Lipstick',
+                  ProductDetailsController.to.product.value.name ?? '-',
                   style: AppTheme.textStyleBoldBlack14,
                 ),
               ),
@@ -50,29 +57,51 @@ class ProductImagePreview extends StatelessWidget {
                 height: 120,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) => GestureDetector(
-                    onTap: () {
-                      ProductDetailsController.to.displayUrl.value=ProductDetailsController.to.images[index];
-                    }
-                    ,
-                    child: Obx(
-                     () {
-                        return Stack(
-                          children: [
-                            CustomNetworkImage(
-                              networkImagePath: '',
-                              borderRadius: 0,
-                              errorImagePath: ProductDetailsController.to.images.value[index],
-                              height: 120,
-                              fit: BoxFit.fitHeight,
-                            ),
-                            ProductDetailsController.to.displayUrl.value!=ProductDetailsController.to.images[index]? Positioned.fill(child: Container(color: Colors.white.withOpacity(.6),)):SizedBox.shrink()
-                          ],
-                        );
-                      }
-                    ),
-                  ),
-                  itemCount: ProductDetailsController.to.images.value.length,
+                  itemCount: ProductDetailsController.to.product.value.variationType == 'shade'
+                      ? ProductDetailsController.to.product.value.productShades!
+                          .firstWhere((element) => element.shadeId == ProductDetailsController.to.selectedVariation.value)
+                          .productShadeImages!
+                          .length
+                      : ProductDetailsController.to.product.value.productSizes!
+                          .firstWhere((element) => element.sizeId == ProductDetailsController.to.selectedVariation.value)
+                          .productSizeImages!
+                          .length,
+                  itemBuilder: (context, index) {
+                    final data = ProductDetailsController.to.product.value.variationType == 'shade'
+                        ? ProductDetailsController.to.product.value.productShades!
+                            .firstWhere((element) => element.shadeId == ProductDetailsController.to.selectedVariation.value)
+                            .productShadeImages![index]
+                            .productShadeImage!
+                        : ProductDetailsController.to.product.value.productSizes!
+                            .firstWhere((element) => element.sizeId == ProductDetailsController.to.selectedVariation.value)
+                            .productSizeImages![index]
+                            .productSizeImage!;
+                    return GestureDetector(
+                      onTap: () {
+                        // ProductDetailsController.to.displayUrl.value = ProductDetailsController.to.images[index];
+                        ProductDetailsController.to.selectedImageForPage.value = index;
+                      },
+                      child: Stack(
+                        children: [
+                          CustomNetworkImage(
+                            networkImagePath: data,
+                            borderRadius: 0,
+                            errorImagePath: AssetsConstant.megaDeals1,
+                            height: 120,
+                            fit: BoxFit.fitHeight,
+                          ),
+                          Obx(
+                            () => index != ProductDetailsController.to.selectedImageForPage.value
+                                ? Positioned.fill(
+                                    child: Container(
+                                    color: Colors.white.withOpacity(.6),
+                                  ))
+                                : SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -80,7 +109,7 @@ class ProductImagePreview extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: BottomCalculationTotalWidget(
-        isSelectSize: false,
+        isSelectSize: ProductDetailsController.to.product.value.variationType == 'size',
       ),
     );
   }

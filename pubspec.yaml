@@ -42,19 +42,36 @@ dependencies:
   path_provider: ^2.0.2
   path: ^1.8.0
   google_sign_in: ^6.2.1
-  flutter_facebook_auth: ^6.0.4
+  #  flutter_facebook_auth: ^6.0.4
   flutter_html:
   url_launcher: ^6.2.4
   azlistview: ^2.0.0
-#    path: ../azlistview-2.0.0
-  mh_videoplayer:
-    path: ../mh_videoplayer
-  mh_core:
-#    path: ../mh_core
-    git:
-      url: https://github.com/mh-sarkar/mh-core.git
-      ref: alpha
+  # Use for shimmer loading effect
+  shimmer: ^3.0.0
 
+  #    path: ../azlistview-2.0.0
+  #  mh_videoplayer:
+  #    path: ../mh_videoplayer
+  mh_core:
+    path: ../mh-core
+  #    git:
+  #      url: https://github.com/mh-sarkar/mh-core.git
+  #      ref: alpha
+  socket_io_client: ^2.0.3+1
+  super_banners: ^0.0.1
+  # Use fcm add
+  firebase_messaging: ^14.7.5
+  flutter_local_notifications: ^16.1.0
+  uuid: ^3.0.6
+  #  telephony: ^0.2.0
+#  share_plus: ^7.1.0
+  #  flutter_share_me:
+  #####################Payment Gateway#####################
+
+  #For Payment purpose
+  flutter_sslcommerz: ^2.2.2-nullsafety.0
+
+  ##################### END Payment Gateway#####################
 
 
 
@@ -68,6 +85,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.12.0
+
+flutter_icons:
+  android: "launcher_icon"
+  ios: true
+  adaptive_icon_background: "assets/ic_launcher_background.png"
+  adaptive_icon_foreground: "assets/ic_launcher_foreground.png"
+  image_path: "assets/ic_launcher.png"
+  min_sdk_android: 21
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -82,7 +108,10 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-   - assets/
+    - assets/
+  #   - packages/mh_ui/assets/
+  #   - packages/mh_ui/assets/images/
+
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -107,6 +136,22 @@ flutter:
   #       - asset: fonts/TrajanPro.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
+  fonts:
+    - family: Times
+      fonts:
+        - asset: fonts/times-new-roman/times new roman.ttf
+        - asset: fonts/times-new-roman/times new roman bold.ttf
+        - asset: fonts/times-new-roman/times new roman bold italic.ttf
+        - asset: fonts/times-new-roman/times new roman italic.ttf
+    - family: InriaSans
+      fonts:
+        - asset: fonts/inria-sans/InriaSans-Regular.ttf
+          weight: 500
+        - asset: fonts/inria-sans/InriaSans-Bold.ttf
+          weight: 700
+        - asset: fonts/inria-sans/InriaSans-Light.ttf
+          weight: 300
+
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

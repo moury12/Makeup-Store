@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/services/api_service.dart';
-import 'package:mh_core/widgets/network_image/network_image.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/controller/auth_controller.dart';
@@ -49,14 +48,14 @@ class ProfileScreen extends StatelessWidget {
                     CustomSizedBox.space24H,
                     Obx(() {
                       return CustomNetworkImage(
-                        networkImagePath: UserController.to.userInfo.value.avatar??'',
+                        networkImagePath: UserController.to.userInfo.value.avatar ?? '',
                         errorImagePath: 'assets/dummy_profile.png',
                       );
                     }),
-                  // CustomNetworkImage(
-                  //       networkImagePath: '',
-                  //       errorImagePath: 'assets/dummy_profile.png',
-                  //     ),
+                    // CustomNetworkImage(
+                    //       networkImagePath: '',
+                    //       errorImagePath: 'assets/dummy_profile.png',
+                    //     ),
                     CustomSizedBox.space8H,
                     Obx(() {
                       return Text(
@@ -86,9 +85,10 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           CustomSizedBox.space4W,
                           RichText(
-                              text: const TextSpan(
-                                  text: '',
-                                  children: [TextSpan(text: '0', style: AppTheme.textStyleBoldBlack12), TextSpan(text: ' Points', style: AppTheme.textStyleNormalBlack12)])),
+                              text: TextSpan(text: '', children: [
+                            TextSpan(text: UserController.to.getUserInfo.rewardPoints, style: AppTheme.textStyleBoldBlack12),
+                            const TextSpan(text: ' Points', style: AppTheme.textStyleNormalBlack12)
+                          ])),
                         ],
                       ),
                     ),
@@ -97,11 +97,11 @@ class ProfileScreen extends StatelessWidget {
                       width: double.infinity,
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration:
-                          BoxDecoration(color: Colors.white, boxShadow: [const BoxShadow(color: Color(0xffE4EDF0), blurRadius: 12)], borderRadius: BorderRadius.circular(8)),
+                          BoxDecoration(color: Colors.white, boxShadow: const [BoxShadow(color: Color(0xffE4EDF0), blurRadius: 12)], borderRadius: BorderRadius.circular(8)),
                       child: Column(
                         children: [
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
                               Get.toNamed(MyProfileScreen.routeName);
                             },
                             image: 'assets/user_icon.png',
@@ -113,7 +113,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
                               Get.toNamed(MyPointsScreen.routeName);
                             },
                             image: AssetsConstant.wallet,
@@ -125,7 +125,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
                               Get.toNamed(MyOrdersScreen.routeName);
                             },
                             image: AssetsConstant.ordersIcon,
@@ -137,7 +137,8 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () async {
+                              await UserController.to.getCancelOrderListCall();
                               Get.toNamed(ReturnAndCancelScreen.routeName);
                             },
                             image: AssetsConstant.returnCancel,
@@ -149,7 +150,8 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () async {
+                              await UserController.to.getReviewListCall();
                               Get.toNamed(MyRatingReviewScreen.routeName);
                             },
                             image: AssetsConstant.ratingReview,
@@ -161,7 +163,8 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
+                              UserController.to.getNotificationListCall();
                               Get.toNamed(NotificationScreen.routeName);
                             },
                             image: AssetsConstant.notification,
@@ -173,7 +176,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
                               Get.toNamed(MyAddressScreen.routeName);
                             },
                             image: AssetsConstant.myAddress,
@@ -185,7 +188,7 @@ class ProfileScreen extends StatelessWidget {
                             height: 1,
                           ),
                           ProfileItemWidget(
-                            function: () {
+                            onPressed: () {
                               // Get.toNamed(LoginScreen.routeName);
                               AuthController.to.logout();
                             },
@@ -209,18 +212,18 @@ class ProfileScreen extends StatelessWidget {
 class ProfileItemWidget extends StatelessWidget {
   final String image;
   final String title;
-  final Function() function;
+  final Function() onPressed;
   const ProfileItemWidget({
     super.key,
     required this.image,
     required this.title,
-    required this.function,
+    required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: function,
+      onTap: onPressed,
       child: Container(
         width: double.infinity,
         color: Colors.transparent,

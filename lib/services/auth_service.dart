@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:mh_core/services/api_service.dart';
 import 'package:mh_core/utils/global.dart';
 import 'package:mh_core/utils/string_utils.dart';
@@ -7,9 +8,8 @@ import 'package:perfecto/utils.dart';
 
 class AuthService {
   static Future<bool> registerCall(dynamic body) async {
-    final response = await ServiceAPI.genericCall(url: '${ServiceAPI.apiUrl}register', httpMethod: HttpMethod.multipartFilePost, noNeedAuthToken: true, allInfoField: body);
-    globalLogger.d('${ServiceAPI.url}api/register', 'Register');
-    globalLogger.d(response, 'Register');
+    final response = await ServiceAPI.genericCall(url: '${Service.apiUrl}register', httpMethod: HttpMethod.multipartFilePost, noNeedAuthToken: true, allInfoField: body);
+    globalLogger.d(response,  'Register');
     if (response['status'] != null && response['status']) {
       showSnackBar(
         msg: response['message'],
@@ -23,13 +23,12 @@ class AuthService {
 
   static Future<dynamic> forgetPassword(dynamic body) async {
     final response = await ServiceAPI.genericCall(
-        url: '${ServiceAPI.apiUrl}forgot_password',
+        url: '${Service.apiUrl}forgot_password',
         httpMethod: HttpMethod.multipartFilePost,
         allInfoField: body,
         noNeedAuthToken: true,
         loadingMessage: 'Use OTP to Change Password.');
-    globalLogger.d('${ServiceAPI.apiUrl}forgot_password', 'Forget password');
-    globalLogger.d(response, 'Forget password');
+    globalLogger.d(response,  'Forget password');
     if (response['status'] != null && response['status']) {
       return response['data'];
     } else if (response['status'] != null && !response['status']) {
@@ -40,25 +39,25 @@ class AuthService {
 
   static Future<dynamic> verifyEmail(dynamic body) async {
     final response = await ServiceAPI.genericCall(
-        url: '${ServiceAPI.apiUrl}verify_email',
+        url: '${Service.apiUrl}verify_email',
         httpMethod: HttpMethod.multipartFilePost,
         noNeedAuthToken: true,
         // isLoadingEnable: true,
 
         allInfoField: body);
-    globalLogger.d(response, "Verify Email Route");
+    globalLogger.d(response,  "Verify Email Route");
 
     if (response['status'] != null && response['status']) {
       return response['data'];
     } else if (response['status'] != null && !response['status']) {
-      ServiceAPI.showAlert(response['message']);
+      ServiceAPI.showAlert(response['data']);
     }
     return {};
   }
 
   static Future<bool> changePassword(dynamic body) async {
-    final response = await ServiceAPI.genericCall(url: '${ServiceAPI.apiUrl}change_password', httpMethod: HttpMethod.multipartFilePost, noNeedAuthToken: false, allInfoField: body);
-    globalLogger.d(response, "change password");
+    final response = await ServiceAPI.genericCall(url: '${Service.apiUrl}change_password', httpMethod: HttpMethod.multipartFilePost, noNeedAuthToken: false, allInfoField: body);
+    globalLogger.d(response,  "change password");
 
     if (response['status'] != null && response['status']) {
       showSnackBar(msg: response['message']);
@@ -73,37 +72,38 @@ class AuthService {
   static Future<dynamic> loginCall(dynamic body, {required LogInType type}) async {
     final response = await ServiceAPI.genericCall(
       url:
-          '${ServiceAPI.apiUrl}${type == LogInType.email ? "login" : type == LogInType.phone ? "otp_login" : type == LogInType.google ? "login/google" : type == LogInType.facebook ? "login/facebook" : type == LogInType.verifyOTP ? "verify_otp" : ''}',
+          '${Service.apiUrl}${type == LogInType.email ? "login" : type == LogInType.phone ? "otp_login" : type == LogInType.google ? "login/google" : type == LogInType.facebook ? "login/facebook" : type == LogInType.verifyOTP ? "verify_otp" : ''}',
       httpMethod: HttpMethod.multipartFilePost,
       noNeedAuthToken: true,
       isLoadingEnable: type == LogInType.phone ? false : true,
       allInfoField: body,
+      debugEnable: true,
     );
-    globalLogger.d(response, "Login Route");
+    globalLogger.d(response,  "Login Route");
     if (response['status'] != null && response['status']) {
       return response['data'];
     } else if (response['status'] != null && !response['status']) {
-      ServiceAPI.showAlert(response['message']);
+      ServiceAPI.showAlert(response['data']);
     }
     return {};
   }
 
   static Future<bool> logoutCall({required Function() forceLogout}) async {
     final response = await ServiceAPI.genericCall(
-        url: '${ServiceAPI.apiUrl}logout',
+        url: '${Service.apiUrl}logout',
         httpMethod: HttpMethod.get,
         isLoadingEnable: false,
         isErrorHandleButtonExists: true,
         errorButtonLabel: 'Force Logout',
         errorButtonPressed: forceLogout);
-    globalLogger.d(response, "Logout Route");
+    globalLogger.d(response,  "Logout Route");
 
     is401Call = true;
 
     if (response['status'] != null && response['status']) {
       return true;
     } else if (response['status'] != null && !(response['status'] == 'ok')) {
-      ServiceAPI.showAlert(errorMessageJson(response['message']));
+      ServiceAPI.showAlert(response['message']);
     }
     return false;
   }

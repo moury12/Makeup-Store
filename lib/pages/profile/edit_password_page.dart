@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/widgets/button/custom_button.dart';
-import 'package:mh_core/widgets/textfield/custom_textfield.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/controller/auth_controller.dart';
@@ -53,74 +52,57 @@ class EditPasswordScreen extends StatelessWidget {
                 widget: Obx(() {
                   return Column(
                     children: [
-                      CustomTextField(
-                        errorMessage:
-                            AuthController.to.errorOldPassword.value!.isEmpty
-                                ? null
-                                : AuthController.to.errorOldPassword.value,
-                        focusNode: AuthController.to.passwordOldFocusNode,
-                        onChanged: (value) {
-                          if (value.isNotEmpty && value.length >= 8) {
-                            AuthController.to.errorOldPassword.value = '';
-                          } else {
-                            if (value.isEmpty) {
-                              AuthController.to.errorOldPassword.value =
-                                  'Enter a Password';
-                            } else if (value.length < 8) {
-                              AuthController.to.errorOldPassword.value =
-                                  'Enter 8 Character Password!';
+                      if (UserController.to.getUserInfo.isGoogleLogin == '0')
+                        CustomTextField(
+                          isPassword: true,
+                          errorMessage: AuthController.to.errorOldPassword.value!.isEmpty ? null : AuthController.to.errorOldPassword.value,
+                          focusNode: AuthController.to.passwordOldFocusNode,
+                          onChanged: (value) {
+                            if (value.isNotEmpty && value.length >= 8) {
+                              AuthController.to.errorOldPassword.value = '';
+                            } else {
+                              if (value.isEmpty) {
+                                AuthController.to.errorOldPassword.value = 'Enter a Password';
+                              } else if (value.length < 8) {
+                                AuthController.to.errorOldPassword.value = 'Enter 8 Character Password!';
+                              }
                             }
-                          }
-                        },
-                        onSubmitted: (p0) {
-                          if (AuthController
-                              .to.passwordOldController.text.isEmpty) {
-                            AuthController.to.errorOldPassword.value =
-                                'Enter a Password';
-                          } else if (AuthController
-                                  .to.passwordOldController.text.length <
-                              8) {
-                            AuthController.to.errorOldPassword.value =
-                                'Enter 8 Character Password!';
-                          } else {
-                            AuthController.to.passwordOldFocusNode.unfocus();
-                          }
-                        },
-                        controller: AuthController.to.passwordOldController,
-                        marginVertical: 6,
-                        hintText: 'Enter Old Password',
-                        labelText: 'Old Password',
-                        focusColor: Colors.black,
-                      ),
+                          },
+                          onSubmitted: (p0) {
+                            if (AuthController.to.passwordOldController.text.isEmpty) {
+                              AuthController.to.errorOldPassword.value = 'Enter a Password';
+                            } else if (AuthController.to.passwordOldController.text.length < 8) {
+                              AuthController.to.errorOldPassword.value = 'Enter 8 Character Password!';
+                            } else {
+                              AuthController.to.passwordOldFocusNode.unfocus();
+                            }
+                          },
+                          controller: AuthController.to.passwordOldController,
+                          marginVertical: 6,
+                          hintText: 'Enter Old Password',
+                          labelText: 'Old Password',
+                          focusColor: Colors.black,
+                        ),
                       CustomTextField(
-                        errorMessage:
-                            AuthController.to.errorForNewPassword.value!.isEmpty
-                                ? null
-                                : AuthController.to.errorForNewPassword.value,
+                        errorMessage: AuthController.to.errorForNewPassword.value!.isEmpty ? null : AuthController.to.errorForNewPassword.value,
                         focusNode: AuthController.to.passwordForNewFocusNode,
+                        isPassword: true,
                         onChanged: (value) {
                           if (value.isNotEmpty && value.length >= 8) {
                             AuthController.to.errorForNewPassword.value = '';
                           } else {
                             if (value.isEmpty) {
-                              AuthController.to.errorForNewPassword.value =
-                                  'Enter a Password';
+                              AuthController.to.errorForNewPassword.value = 'Enter a Password';
                             } else if (value.length < 8) {
-                              AuthController.to.errorForNewPassword.value =
-                                  'Enter 8 Character Password!';
+                              AuthController.to.errorForNewPassword.value = 'Enter 8 Character Password!';
                             }
                           }
                         },
                         onSubmitted: (p0) {
-                          if (AuthController
-                              .to.passwordForNewController.text.isEmpty) {
-                            AuthController.to.errorForNewPassword.value =
-                                'Enter a Password';
-                          } else if (AuthController
-                                  .to.passwordForNewController.text.length <
-                              8) {
-                            AuthController.to.errorForNewPassword.value =
-                                'Enter 8 Character Password!';
+                          if (AuthController.to.passwordForNewController.text.isEmpty) {
+                            AuthController.to.errorForNewPassword.value = 'Enter a Password';
+                          } else if (AuthController.to.passwordForNewController.text.length < 8) {
+                            AuthController.to.errorForNewPassword.value = 'Enter 8 Character Password!';
                           } else {
                             AuthController.to.passwordForNewFocusNode.unfocus();
                           }
@@ -132,113 +114,64 @@ class EditPasswordScreen extends StatelessWidget {
                         focusColor: Colors.black,
                       ),
                       CustomTextField(
-                        focusNode:
-                            AuthController.to.confirmPasswordForNewFocusNode,
-                        errorMessage: AuthController
-                                .to.errorForNewREPassword.value!.isEmpty
-                            ? null
-                            : AuthController.to.errorForNewREPassword.value,
+                        isPassword: true,
+                        focusNode: AuthController.to.confirmPasswordForNewFocusNode,
+                        errorMessage: AuthController.to.errorForNewREPassword.value!.isEmpty ? null : AuthController.to.errorForNewREPassword.value,
                         onChanged: (value) {
-                          if (value.isNotEmpty &&
-                              value.length >= 8 &&
-                              AuthController.to.passwordForNewController.text ==
-                                  value) {
+                          if (value.isNotEmpty && value.length >= 8 && AuthController.to.passwordForNewController.text == value) {
                             AuthController.to.errorForNewREPassword.value = '';
                           } else {
                             if (value.isEmpty) {
-                              AuthController.to.errorForNewREPassword.value =
-                                  'Enter a Password';
-                            } else if (AuthController
-                                    .to.passwordForNewController.text !=
-                                value) {
-                              AuthController.to.errorForNewREPassword.value =
-                                  'Passwords did not match!';
+                              AuthController.to.errorForNewREPassword.value = 'Enter a Password';
+                            } else if (AuthController.to.passwordForNewController.text != value) {
+                              AuthController.to.errorForNewREPassword.value = 'Passwords did not match!';
                             }
                           }
                         },
                         onSubmitted: (p0) {
-                          if (AuthController.to.passwordForNewConfirmController
-                              .text.isEmpty) {
-                            AuthController.to.errorForNewREPassword.value =
-                                'Enter a Password';
-                          } else if (AuthController
-                                  .to.passwordForNewConfirmController.text !=
-                              AuthController.to.passwordForNewController.text) {
-                            AuthController.to.errorForNewREPassword.value =
-                                'Passwords did not match!';
+                          if (AuthController.to.passwordForNewConfirmController.text.isEmpty) {
+                            AuthController.to.errorForNewREPassword.value = 'Enter a Password';
+                          } else if (AuthController.to.passwordForNewConfirmController.text != AuthController.to.passwordForNewController.text) {
+                            AuthController.to.errorForNewREPassword.value = 'Passwords did not match!';
                           } else {
-                            AuthController.to.confirmPasswordForNewFocusNode
-                                .unfocus();
+                            AuthController.to.confirmPasswordForNewFocusNode.unfocus();
                           }
                         },
-                        controller:
-                            AuthController.to.passwordForNewConfirmController,
+                        controller: AuthController.to.passwordForNewConfirmController,
                         marginVertical: 6,
                         hintText: ' Confirm New Password',
                         labelText: 'Confirm New Password',
                         focusColor: Colors.black,
                       ),
                       CustomButton(
-                        label: 'Change Password',
-                        onPressed: () {
-                          if (AuthController
-                                  .to.passwordOldController.text.isNotEmpty &&
-                              AuthController.to.passwordOldController.text.length >=
-                                  8 &&
-                              AuthController
-                                  .to.passwordForNewController.text.isNotEmpty &&
-                              AuthController.to.passwordForNewController.text
-                                      .length >=
-                                  8 &&
-                              AuthController.to.passwordForNewConfirmController
-                                  .text.isNotEmpty &&
-                              AuthController.to.passwordForNewConfirmController
-                                      .text ==
-                                  AuthController
-                                      .to.passwordForNewController.text) {
-                            UserController.to.editPassword(
-                                AuthController.to.passwordOldController.text,
-                                AuthController.to.passwordForNewController.text,
-                                AuthController
-                                    .to.passwordForNewConfirmController.text);
-                            AuthController.to.passwordForNewConfirmController
-                                .clear();
-                            AuthController.to.passwordForNewController.clear();
-                            AuthController.to.passwordOldController.clear();
+                        label: '${UserController.to.getUserInfo.isGoogleLogin == '1' ? 'Set' : 'Change'} Password',
+                        onPressed: () async {
+                          if ((UserController.to.getUserInfo.isGoogleLogin == '1' ||
+                                  (AuthController.to.passwordOldController.text.isNotEmpty && AuthController.to.passwordOldController.text.length >= 8)) &&
+                              AuthController.to.passwordForNewController.text.isNotEmpty &&
+                              AuthController.to.passwordForNewController.text.length >= 8 &&
+                              AuthController.to.passwordForNewConfirmController.text.isNotEmpty &&
+                              AuthController.to.passwordForNewConfirmController.text == AuthController.to.passwordForNewController.text) {
+                            await UserController.to.editPassword(AuthController.to.passwordOldController.text, AuthController.to.passwordForNewController.text,
+                                AuthController.to.passwordForNewConfirmController.text);
                           } else {
-                            if (AuthController.to
-                                .passwordForNewConfirmController.text.isEmpty) {
-                              AuthController.to.errorForNewREPassword.value =
-                                  'Enter a Password';
+                            if (AuthController.to.passwordForNewConfirmController.text.isEmpty) {
+                              AuthController.to.errorForNewREPassword.value = 'Enter a Password';
                             }
-                            if (AuthController
-                                    .to.passwordForNewConfirmController.text !=
-                                AuthController
-                                    .to.passwordForNewController.text) {
-                              AuthController.to.errorForNewREPassword.value =
-                                  'Passwords did not match!';
+                            if (AuthController.to.passwordForNewConfirmController.text != AuthController.to.passwordForNewController.text) {
+                              AuthController.to.errorForNewREPassword.value = 'Passwords did not match!';
                             }
-                            if (AuthController
-                                .to.passwordForNewController.text.isEmpty) {
-                              AuthController.to.errorForNewPassword.value =
-                                  'Enter a Password';
+                            if (AuthController.to.passwordForNewController.text.isEmpty) {
+                              AuthController.to.errorForNewPassword.value = 'Enter a Password';
                             }
-                            if (AuthController
-                                    .to.passwordForNewController.text.length <
-                                8) {
-                              AuthController.to.errorForNewPassword.value =
-                                  'Enter 8 Character Password!';
+                            if (AuthController.to.passwordForNewController.text.length < 8) {
+                              AuthController.to.errorForNewPassword.value = 'Enter 8 Character Password!';
                             }
-                            if (AuthController
-                                .to.passwordOldController.text.isEmpty) {
-                              AuthController.to.errorOldPassword.value =
-                                  'Enter a Password';
+                            if (AuthController.to.passwordOldController.text.isEmpty) {
+                              AuthController.to.errorOldPassword.value = 'Enter a Password';
                             }
-                            if (AuthController
-                                    .to.passwordOldController.text.length <
-                                8) {
-                              AuthController.to.errorOldPassword.value =
-                                  'Enter 8 Character Password!';
+                            if (AuthController.to.passwordOldController.text.length < 8) {
+                              AuthController.to.errorOldPassword.value = 'Enter 8 Character Password!';
                             }
                           }
                         },

@@ -2,10 +2,11 @@ import 'package:azlistview/azlistview.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/widgets/network_image/network_image.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/controller/home_api_controller.dart';
+import 'package:perfecto/controller/navigation_controller.dart';
 import 'package:perfecto/drawer/custom_drawer.dart';
 import 'package:perfecto/pages/category/single_category_page.dart';
 import 'package:perfecto/pages/home/controller/home_controller.dart';
@@ -54,12 +55,12 @@ class _BrandScreenState extends State<BrandScreen> {
           const HomeTopWidget(),
           const TitleTextWidget(tileText: 'Popular Brands'),
           Obx(() => HomeApiController.to.brandList.where((p0) => p0.isPopular == '1').isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.all(16.0),
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
                   child: Center(
                     child: Text(
                       "There is no popular brand right now",
-                      style: const TextStyle(fontSize: 10, color: Color(0xFF666666)),
+                      style: TextStyle(fontSize: 10, color: Color(0xFF666666)),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -75,14 +76,18 @@ class _BrandScreenState extends State<BrandScreen> {
                     crossAxisSpacing: 8,
                   ),
                   itemBuilder: (context, index) {
-                    final popularBrand = HomeApiController.to.brandList.where((p0) => p0.isPopular == '1').toList();
-                    final brand = popularBrand[index];
+                    final brand = HomeApiController.to.brandList.where((p0) => p0.isPopular == '1').toList()[index];
                     return GestureDetector(
                       onTap: () async {
                         await HomeApiController.to.productListWithCategoryCall({
                           'brand': [brand.id!].toString(),
                         });
-                        Get.toNamed(SingleCatergoryWiseScreen.routeName);
+                        NavigationController.to.resetFilters();
+                        HomeApiController.to.brandList.firstWhere((element) => element.id == brand.id).isChecked = true;
+                        NavigationController.to.addAttribute = {
+                          'brand': [brand.id!].toString(),
+                        };
+                        Get.toNamed(SingleCategoryWiseScreen.routeName);
                       },
                       child: Container(
                           decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: const Color(0xffF2F4F5)),
@@ -91,7 +96,7 @@ class _BrandScreenState extends State<BrandScreen> {
                             errorImagePath: AssetsConstant.brandLogo,
                             // height: 45,
                             borderRadius: 0,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                           )),
                     );
                   },
@@ -120,7 +125,7 @@ class _BrandScreenState extends State<BrandScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       subData.susTag == null
-                          ? SizedBox.shrink()
+                          ? const SizedBox.shrink()
                           : Padding(
                               padding: const EdgeInsets.symmetric(vertical: 4.0),
                               child: Text(
@@ -144,10 +149,15 @@ class _BrandScreenState extends State<BrandScreen> {
                           ),
                         ),
                         onTap: () async {
-                          await HomeApiController.to.productListWithCategoryCall({
+                          HomeApiController.to.productListWithCategoryCall({
                             'brand': [subData.id!].toString(),
                           });
-                          Get.toNamed(SingleCatergoryWiseScreen.routeName);
+                          NavigationController.to.resetFilters();
+                          HomeApiController.to.brandList.firstWhere((element) => element.id == subData.id).isChecked = true;
+                          NavigationController.to.addAttribute = {
+                            'brand': [subData.id!].toString(),
+                          };
+                          Get.toNamed(SingleCategoryWiseScreen.routeName);
                         },
                       ),
                     ],

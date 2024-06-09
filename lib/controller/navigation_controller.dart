@@ -1,11 +1,11 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:mh_core/utils/global.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:perfecto/controller/auth_controller.dart';
 import 'package:perfecto/controller/home_api_controller.dart';
 import 'package:perfecto/models/product_attribute_model.dart';
 import 'package:perfecto/pages/auth/login_page.dart';
+import 'package:perfecto/pages/chat/chat_controller.dart';
 
 import '../constants/assets_constants.dart';
 
@@ -30,6 +30,10 @@ class NavigationController extends GetxController {
       loginRoute(index);
     } else {
       selectedIndex.value = index;
+      if (index == 2) {
+        globalLogger.d("getChats");
+        ChatController.to.getChats();
+      }
     }
   }
 
@@ -47,14 +51,18 @@ class NavigationController extends GetxController {
     });
 
     HomeApiController.to.categoryList.forEach((category) {
-      category.isExpanded = false;
+      category.isChecked = false;
       category.subcategory?.forEach((subcategory) {
-        subcategory.isExpanded = false;
+        subcategory.isChecked = false;
         subcategory.subcategory?.forEach((child) {
-          child.isExpanded = false;
+          child.isChecked = false;
         });
       });
     });
+    HomeApiController.to.brandList.forEach((element) {
+      element.isChecked = false;
+    });
+
     update();
     attributeList.refresh();
     HomeApiController.to.update();
@@ -63,6 +71,7 @@ class NavigationController extends GetxController {
 
   RxBool openSearchSuggestion = true.obs;
   Rx<TextEditingController> searchController = TextEditingController().obs;
+  Rx<FocusNode> searchFocus = FocusNode().obs;
   RxBool isSearchFieldNotEmpty = false.obs;
 
   @override
@@ -73,17 +82,14 @@ class NavigationController extends GetxController {
   @override
   void onClose() {
     searchController.value.dispose();
+    searchFocus.value.dispose();
     globalLogger.d("searchController dispose");
     super.onClose();
   }
 
   void attributeListCall() {
     attributeList.value = <AttributeModel>[
-      AttributeModel(
-          name: 'Category',
-          attributes: [],
-          isSelected: true,
-          keyName: 'category'),
+      AttributeModel(name: 'Category', attributes: [], isSelected: true, keyName: 'category'),
       AttributeModel(
         keyName: 'brand',
         name: 'Brand',
@@ -92,12 +98,23 @@ class NavigationController extends GetxController {
       AttributeModel(
         keyName: 'max_min',
         name: 'Price',
-        attributes: [],
+        attributes: [
+          ProductAttributeModel(id: '[0,499]', name: '0 - 499', filtered: false),
+          ProductAttributeModel(id: '[500,999]', name: '500 - 999', filtered: false),
+          ProductAttributeModel(id: '[1000,1499]', name: '1000 - 1499', filtered: false),
+          ProductAttributeModel(id: '[1500,1999]', name: '1500 - 1999', filtered: false),
+          ProductAttributeModel(id: '[2000,2999]', name: '2000 & Above', filtered: false),
+        ].obs,
       ),
       AttributeModel(
-        keyName: '',
-        name: 'Discount',
-        attributes: [],
+        keyName: 'sorting',
+        name: 'Sorting',
+        attributes: [
+          ProductAttributeModel(id: 'popularity', name: 'Popularity', filtered: false),
+          ProductAttributeModel(id: 'discount', name: 'Discount', filtered: false),
+          ProductAttributeModel(id: 'top_rated', name: 'Top Rated', filtered: false),
+          ProductAttributeModel(id: 'new_arrival', name: 'new_arrival', filtered: false),
+        ].obs,
       ),
       AttributeModel(
         keyName: 'average_rating',
@@ -143,7 +160,8 @@ class NavigationController extends GetxController {
         keyName: 'ingredient',
         name: 'Ingredient',
         attributes: HomeApiController.to.ingredientList,
-      ), AttributeModel(
+      ),
+      AttributeModel(
         keyName: 'pack_size',
         name: 'Pack Size',
         attributes: HomeApiController.to.packSizeList,
@@ -166,14 +184,8 @@ class NavigationController extends GetxController {
     ];
     sortList.value = <SortModel>[
       SortModel(name: 'Relevance', isSelected: true),
-      SortModel(
-          name: 'Price - High to Low',
-
-          keyName: 'sort_by_price'),
-      SortModel(
-          name: 'Price - Low to High',
-
-          keyName: 'sort_by_price'),
+      SortModel(name: 'Price - High to Low', keyName: 'desc'),
+      SortModel(name: 'Price - Low to High', keyName: 'asc'),
     ];
   }
 }

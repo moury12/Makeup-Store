@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:mh_core/utils/global.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
+import 'package:perfecto/controller/auth_controller.dart';
 import 'package:perfecto/controller/home_api_controller.dart';
+import 'package:perfecto/controller/user_controller.dart';
 import 'package:perfecto/drawer/drawer_controller.dart';
 import 'package:perfecto/models/product_attribute_model.dart';
 import 'package:perfecto/pages/auth/return_cancelation_page.dart';
@@ -13,9 +16,12 @@ import 'package:perfecto/pages/blog/blog_page.dart';
 import 'package:perfecto/pages/category/single_category_page.dart';
 import 'package:perfecto/pages/home/brand_page.dart';
 import 'package:perfecto/pages/my-cart/wish_list_page.dart';
+import 'package:perfecto/pages/offer/offer_details_page.dart';
 import 'package:perfecto/pages/profile/return_and_cancelation.dart';
 import 'package:perfecto/shared/custom_sized_box.dart';
 import 'package:perfecto/theme/theme_data.dart';
+
+import '../controller/navigation_controller.dart';
 
 class CustomDrawer extends StatelessWidget {
   const CustomDrawer({super.key});
@@ -24,12 +30,12 @@ class CustomDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        HomeApiController.to.categoryList.forEach((element) {
+        for (var element in HomeApiController.to.categoryList) {
           element.isExpanded = false;
-          element.subcategory!.forEach((element) {
-            element.isExpanded = false;
-          });
-        });
+          for (var el in element.subcategory!) {
+            el.isExpanded = false;
+          }
+        }
         return true;
       },
       child: Drawer(
@@ -67,15 +73,23 @@ class CustomDrawer extends StatelessWidget {
                             height: 25,
                             color: Colors.black,
                           ),
-                          Positioned(
-                            top: -2,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(2.5),
-                              decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.kDarkPrimaryColor),
-                              child: const Text('12', style: AppTheme.textStyleBoldWhite8),
-                            ),
-                          )
+                          Obx(() {
+                            return (AuthController.to.isLoggedIn.value && UserController.to.wishList.isNotEmpty)
+                                ? Positioned(
+                                    top: -2,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2.5),
+                                      height: 15,
+                                      width: 15,
+                                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.kDarkPrimaryColor),
+                                      child: Center(
+                                          child: Text(UserController.to.wishList.length > 9 ? '9+' : UserController.to.wishList.length.toString(),
+                                              style: AppTheme.textStyleBoldWhite8)),
+                                    ),
+                                  )
+                                : const SizedBox.shrink();
+                          })
                         ],
                       ),
                     ),
@@ -107,15 +121,30 @@ class CustomDrawer extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context);
-                            Get.toNamed(WishListScreen.routeName);
-                          },
-                          child: const SaleTextWidget()),
-                      const SaleTextWidget(text: 'Puja Sale', color: Color(0xffD90068)),
-                      const SaleTextWidget(text: 'Buy 1 Get 1', color: Color(0xff9747FF)),
-                      const SaleTextWidget(text: 'Clearance Sale', color: Color(0xff129CED)),
+                      ...HomeApiController.to.menuOfferList
+                          .map(
+                            (element) => GestureDetector(
+                              onTap: () async {
+                                Navigator.pop(context);
+                                await HomeApiController.to.offerDetailsCall(element.offerId!);
+                                Get.toNamed(OfferDetailsScreen.routeName);
+                              },
+                              child: SaleTextWidget(
+                                text: element.offer!.name!,
+                                color: HomeApiController.to.stringToColor(element.offer!.color!),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      // GestureDetector(
+                      //     onTap: () {
+                      //       Navigator.pop(context);
+                      //       Get.toNamed(WishListScreen.routeName);
+                      //     },
+                      //     child: const SaleTextWidget()),
+                      // const SaleTextWidget(text: 'Puja Sale', color: Color(0xffD90068)),
+                      // const SaleTextWidget(text: 'Buy 1 Get 1', color: Color(0xff9747FF)),
+                      // const SaleTextWidget(text: 'Clearance Sale', color: Color(0xff129CED)),
                       CustomSizedBox.space12H,
                       const CustomDividerWidget(),
                       CustomSizedBox.space8H,
@@ -231,10 +260,14 @@ class DrawerMenuItemWidget extends StatelessWidget {
       onTap: () async {
         Navigator.pop(context);
 
-        await HomeApiController.to.productListWithCategoryCall({
+        NavigationController.to.resetFilters();
+        HomeApiController.to.categoryList.firstWhere((element) => element.id == categoryModel.id).isChecked = true;
+        NavigationController.to.addAttribute.addAll({
           'category': [categoryModel.id!].toString(),
         });
-        Get.toNamed(SingleCatergoryWiseScreen.routeName);
+
+        HomeApiController.to.productListWithCategoryCall(NavigationController.to.addAttribute);
+        Get.toNamed(SingleCategoryWiseScreen.routeName);
         HomeApiController.to.categoryList.forEach((element) {
           element.isExpanded = false;
         });
@@ -353,10 +386,19 @@ class DrawerMenuItemWidget extends StatelessWidget {
                                 onTap: () async {
                                   Navigator.pop(context);
 
-                                  await HomeApiController.to.productListWithCategoryCall({
+                                  HomeApiController.to.productListWithCategoryCall({
                                     'subcategory': [subCate.id!].toString(),
                                   });
-                                  Get.toNamed(SingleCatergoryWiseScreen.routeName);
+                                  NavigationController.to.resetFilters();
+                                  HomeApiController.to.categoryList
+                                      .firstWhere((element) => element.id == categoryModel.id)
+                                      .subcategory!
+                                      .firstWhere((element) => element.id == subCate.id)
+                                      .isChecked = true;
+                                  NavigationController.to.addAttribute.addAll({
+                                    'subcategory': [subCate.id!].toString(),
+                                  });
+                                  Get.toNamed(SingleCategoryWiseScreen.routeName);
                                   HomeApiController.to.categoryList.forEach((element) {
                                     element.isExpanded = false;
                                   });
@@ -371,10 +413,21 @@ class DrawerMenuItemWidget extends StatelessWidget {
                                             onTap: () async {
                                               Navigator.pop(context);
 
-                                              await HomeApiController.to.productListWithCategoryCall({
+                                              HomeApiController.to.productListWithCategoryCall({
                                                 'child_category': [subCat.id!].toString(),
                                               });
-                                              Get.toNamed(SingleCatergoryWiseScreen.routeName);
+                                              NavigationController.to.resetFilters();
+                                              HomeApiController.to.categoryList
+                                                  .firstWhere((element) => element.id == categoryModel.id)
+                                                  .subcategory!
+                                                  .firstWhere((element) => element.id == subCate.id)
+                                                  .subcategory!
+                                                  .firstWhere((element) => element.id == subCat.id)
+                                                  .isChecked = true;
+                                              NavigationController.to.addAttribute.addAll({
+                                                'child_category': [subCat.id!].toString(),
+                                              });
+                                              Get.toNamed(SingleCategoryWiseScreen.routeName);
                                               HomeApiController.to.categoryList.forEach((element) {
                                                 element.isExpanded = false;
                                               });

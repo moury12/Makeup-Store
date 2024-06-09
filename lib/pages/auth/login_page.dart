@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:mh_core/utils/global.dart';
-import 'package:mh_core/widgets/button/custom_button.dart';
-import 'package:mh_core/widgets/textfield/custom_textfield.dart';
 import 'package:perfecto/constants/assets_constants.dart';
 import 'package:perfecto/constants/color_constants.dart';
 import 'package:perfecto/controller/auth_controller.dart';
@@ -123,19 +122,16 @@ class LoginScreen extends StatelessWidget {
                       if (AuthController.to.phoneLoginController.text.isNotEmpty && AuthController.to.phoneLoginController.text.length >= 11) {
                         _login(type: LogInType.phone, phone: AuthController.to.phoneLoginController.text);
 
-                        AuthController.to.isOtp.value = true;
-                        showSnackBar(
-                          msg: 'Use OTP to Login.',
-                        );
+                        // AuthController.to.isOtp.value = true;
+                        // showSnackBar(
+                        //   msg: 'Use OTP to Login.',
+                        // );
                       } else {
                         if (AuthController.to.phoneLoginController.text.isEmpty) {
-                          AuthController.to.errorLoginPhone.value = 'Enter a '
-                              'phone number';
+                          AuthController.to.errorLoginPhone.value = 'Enter a phone number';
                         }
                         if (AuthController.to.phoneLoginController.text.length < 11) {
-                          AuthController.to.errorLoginPhone.value = 'Enter a '
-                              'valid'
-                              ' phone number';
+                          AuthController.to.errorLoginPhone.value = 'Enter a valid phone number';
                         }
                       }
                     } else {
@@ -331,24 +327,24 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 CustomSizedBox.space16H,
-                CustomButton(
-                  label: 'Continue with Facebook',
-                  primary: const Color(0xff3C579B),
-                  onPressed: () async {
-                    final isLogIn = await AuthController.to.loginWithFacebook();
-                    if (isLogIn) {
-                      _login(
-                          email: AuthController.to.userData!['email'],
-                          name: AuthController.to.userData!['name'],
-                          fbId: AuthController.to.userData!['id'],
-                          type: LogInType.facebook,
-                          avatar: AuthController.to.userData!['picture'] != null ? AuthController.to.userData!['picture']['data']['url'] : null);
-                    }
-                  },
-                  marginVertical: 12,
-                  prefixImage: AssetsConstant.facebook,
-                  prefixImageHeight: 20,
-                ),
+                // CustomButton(
+                //   label: 'Continue with Facebook',
+                //   primary: const Color(0xff3C579B),
+                //   onPressed: () async {
+                //     final isLogIn = await AuthController.to.loginWithFacebook();
+                //     if (isLogIn) {
+                //       _login(
+                //           email: AuthController.to.userData!['email'],
+                //           name: AuthController.to.userData!['name'],
+                //           fbId: AuthController.to.userData!['id'],
+                //           type: LogInType.facebook,
+                //           avatar: AuthController.to.userData!['picture'] != null ? AuthController.to.userData!['picture']['data']['url'] : null);
+                //     }
+                //   },
+                //   marginVertical: 12,
+                //   prefixImage: AssetsConstant.facebook,
+                //   prefixImageHeight: 20,
+                // ),
                 CustomButton(
                   label: 'Continue with Google',
                   primary: Colors.white,

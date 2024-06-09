@@ -1,22 +1,38 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:mh_core/mh_core.dart';
 import 'package:mh_core/utils/global.dart';
 import 'package:perfecto/controller/navigation_controller.dart';
+import 'package:perfecto/controller/user_controller.dart';
 import 'package:perfecto/models/blog_model.dart';
+import 'package:perfecto/models/combo_product_model.dart';
+import 'package:perfecto/models/coupon_model.dart';
+import 'package:perfecto/models/home_model.dart';
+import 'package:perfecto/models/menu_offer_model.dart';
 import 'package:perfecto/models/outlet_model.dart';
-import 'package:perfecto/models/outlet_model.dart';
-import 'package:perfecto/models/product_attribute_model.dart';
 import 'package:perfecto/models/product_attribute_model.dart';
 import 'package:perfecto/models/shade_model.dart';
+import 'package:perfecto/models/shipping_model.dart';
 import 'package:perfecto/models/terms_condition_model.dart';
+import 'package:perfecto/pages/my-cart/cart_controller.dart';
+import 'package:perfecto/pages/product-details/product_details_controller.dart';
+import 'package:perfecto/pages/product-details/product_details_page.dart';
 import 'package:perfecto/services/home_service.dart';
 import 'package:perfecto/services/product_services.dart';
+import 'package:perfecto/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/offer_details_model.dart';
 import '../models/product_model.dart';
+import '../models/trending_search_model.dart';
 
 class HomeApiController extends GetxController {
+  RxString couponCode = ''.obs;
+  RxString rewardPointApply = '0'.obs;
+
   static HomeApiController get to => Get.find();
   RxList<OutletModel> outletList = <OutletModel>[].obs;
+  Rx<ProductAPIType> productAPIType = ProductAPIType.category.obs;
   RxList<ProductAttributeModel> colorList = <ProductAttributeModel>[].obs;
   RxList<ProductAttributeModel> preferenceList = <ProductAttributeModel>[].obs;
   RxList<ProductAttributeModel> formulationList = <ProductAttributeModel>[].obs;
@@ -31,7 +47,9 @@ class HomeApiController extends GetxController {
   RxList<ProductAttributeModel> packSizeList = <ProductAttributeModel>[].obs;
   RxList<BlogModel> blogList = <BlogModel>[].obs;
   RxList<BrandModel> brandList = <BrandModel>[].obs;
+  Rx<LoadingStatus> brandListStatus = LoadingStatus.initial.obs;
   RxList<CategoryModel> categoryList = <CategoryModel>[].obs;
+  Rx<LoadingStatus> categoryListStatus = LoadingStatus.initial.obs;
 
   Rx<SingleBlogModel> singleBlog = SingleBlogModel().obs;
   Rx<TermsConditionModel> termsConditionInfo = TermsConditionModel().obs;
@@ -39,36 +57,87 @@ class HomeApiController extends GetxController {
   Rx<TermsConditionModel> returnRefundInfo = TermsConditionModel().obs;
 
   RxList<ProductModel> productList = <ProductModel>[].obs;
+  RxList<CategoryModel> catList = <CategoryModel>[].obs;
+  RxList<BrandModel> searchBrandList = <BrandModel>[].obs;
+  RxString paginationUrl = ''.obs;
+  Rx<LoadingStatus> pListStatus = LoadingStatus.initial.obs;
+  ScrollController scrollController = ScrollController();
+
+  Future<void> _scrollListener() async {
+    // globalLogger.d('Scroll Listener');
+    // globalLogger.d(scrollController.position.pixels, 'pixels');
+    if (pListStatus != LoadingStatus.loadingMore &&
+        scrollController.position.pixels ==
+            scrollController.position.maxScrollExtent) {
+      if (paginationUrl.value.isNotEmpty) {
+        if (productAPIType.value == ProductAPIType.filter) {
+          await productListCallWithFilterCall(
+              NavigationController.to.addAttribute,
+              initialCall: false);
+        } else if (productAPIType.value == ProductAPIType.category) {
+          await productListWithCategoryCall(
+              NavigationController.to.addAttribute,
+              initialCall: false);
+        } else if (productAPIType.value == ProductAPIType.search) {
+          await productListCallWithNameCall(
+              NavigationController.to.addAttribute,
+              initialCall: false);
+        }
+      }
+    }
+  }
+
+  RxList<ProductModel> searchList = <ProductModel>[].obs;
 
   RxList<SizeModel> sizeList = <SizeModel>[].obs;
   RxList<ShadeModel> shadeList = <ShadeModel>[].obs;
+  RxList<OfferModel> offerList = <OfferModel>[].obs;
+  RxList<MenuOfferModel> menuOfferList = <MenuOfferModel>[].obs;
+  RxList<TrendingSearchModel> trendingSearchList = <TrendingSearchModel>[].obs;
+  RxList<ComboOfferItemModel> comboList = <ComboOfferItemModel>[].obs;
+  Rx<ComboDetailsModel> comboProduct = ComboDetailsModel().obs;
+  Rx<OfferDetailsModel> offerDetails = OfferDetailsModel().obs;
+  Rx<OfferDetailsModel> singleCatOffer = OfferDetailsModel().obs;
+  Rx<CouponModel> couponInfo = CouponModel().obs;
+  Rx<ShippingModel> shippingInfo = ShippingModel().obs;
+  Rx<RewardPointModel> rewardPointInfo = RewardPointModel().obs;
+
   @override
   void onInit() async {
+    scrollController.addListener(_scrollListener);
+    await rewardPointCall();
     categoryListCall();
-    await blogListCall();
-    await preferenceListCall();
-    await formulationListCall();
-    await finishListCall();
-    await countryListCall();
-    await genderListCall();
-    await coverageListCall();
-    await skinTypeListCall();
-    await benefitListCall();
-    await concernListCall();
-    await ingredientListCall();
-    await packSizeListCall();
-    await brandListCall();
-    await termsConditionCall();
-    await privacyPolicyCall();
-    await returnRefundCall();
-    await colorListCall();
-    await outletListCall();
-    await shadeListCall();
-    await sizeListCall();
+    menuOfferListCall();
+    blogListCall();
+    await filterDataCall();
+    trendingSearchListCall();
+    shippingCall();
 
     NavigationController.to.attributeListCall();
 
     super.onInit();
+  }
+
+  //String to Color Dart Function
+  Color stringToColor(String color) {
+    // globalLogger.d(color, 'color');
+    return Color(int.parse(color.substring(1, 7), radix: 16) + 0xFF000000);
+  }
+
+  productDetailsCall(String productId) async {
+    if (Get.currentRoute == ProductDetailsScreen.routeName) {
+      Get.back();
+    }
+    try {
+      Get.put<ProductDetailsController>(
+        ProductDetailsController(),
+      );
+    } catch (e) {
+      globalLogger.e(e);
+    }
+    await ProductDetailsController.to.getProductDetails(productId);
+    ProductDetailsController.to.getReviewImages(productId);
+    Get.toNamed(ProductDetailsScreen.routeName);
   }
 
   Future<void> privacyPolicyCall() async {
@@ -147,41 +216,237 @@ class HomeApiController extends GetxController {
     shadeList.value = await HomeService.shadeCall();
   }
 
+  //offerCall
+  Future<void> offerListCall() async {
+    offerList.value = await HomeService.offerCall();
+  }
+
+  //menuOfferList
+  Future<void> menuOfferListCall() async {
+    menuOfferList.value = await HomeService.availableOfferCall();
+  }
+
+  //offerDetailsCall
+  Future<void> offerDetailsCall(String offerId) async {
+    final data = await HomeService.offerDetailsCall(offerId);
+    offerDetails.value = data[OfferType.offer]!;
+    comboList.value = data[OfferType.combo]! as List<ComboOfferItemModel>;
+  }
+
+  //offerDetailsCall
+  Future<void> offerDetailsCatCall(String offerId, String catId) async {
+    singleCatOffer.value =
+        await HomeService.offerDetailsCatCall(offerId, catId);
+    productList.value = singleCatOffer.value.data!.first.products!.data!;
+  }
+
   Future<void> brandListCall() async {
-    final List<BrandModel> data = await HomeService.brandCall();
-    data.sort((a, b) => a.name!.toLowerCase().compareTo(b.name!.toLowerCase()));
+    brandListStatus.value = LoadingStatus.loading;
+    try {
+      final List<BrandModel> data = await HomeService.brandCall();
+      data.sort(
+          (a, b) => a.name!.toLowerCase().compareTo(b.name!.toLowerCase()));
 
-    _addSuspensionTag(data);
+      _addSuspensionTag(data);
 
-    brandList.value = data;
+      brandList.value = data;
+      brandListStatus.value = LoadingStatus.loaded;
+    } catch (e) {
+      brandListStatus.value = LoadingStatus.error;
+    }
   }
 
   Future<void> categoryListCall() async {
-    categoryList.value = await HomeService.categoryCall();
+    categoryListStatus.value = LoadingStatus.loading;
+    categoryList.value = [];
+    try {
+      categoryList.value = await HomeService.categoryCall();
+      categoryListStatus.value = LoadingStatus.loaded;
+    } catch (e) {
+      categoryListStatus.value = LoadingStatus.error;
+    }
   }
 
-  Future<void> productListWithCategoryCall(dynamic body) async {
-    globalLogger.d(body, 'productListWithCategoryCall');
-    productList.clear();
-    productList.value = await ProductService.productListCallWithCategory(body);
-    globalLogger.d(productList, 'productList');
+  Future<void> productListWithCategoryCall(dynamic body,
+      {bool initialCall = true}) async {
+    productAPIType.value = ProductAPIType.category;
+    body.addAll({'pagination': '6'});
+
+    if (NavigationController.to.searchController.value.text.isEmpty) {
+      body.remove('search');
+    }
+    if (initialCall) {
+      productList.clear();
+      pListStatus.value = LoadingStatus.loading;
+    } else {
+      pListStatus.value = LoadingStatus.loadingMore;
+    }
+    try {
+      final data = await ProductService.productListCallWithCategory(body,
+          paginationUrl: initialCall ? null : paginationUrl.value);
+      if (initialCall) {
+        productList.value = data;
+        pListStatus.value = LoadingStatus.loaded;
+      } else {
+        productList.addAll(data);
+        pListStatus.value = LoadingStatus.loaded;
+      }
+      update();
+    } catch (e) {
+      pListStatus.value = LoadingStatus.error;
+      update();
+    }
+  }
+
+  Future<void> productListCallWithFilterCall(dynamic body,
+      {bool initialCall = true}) async {
+    productAPIType.value = ProductAPIType.filter;
+    body.addAll({'pagination': '6'});
+    if (NavigationController.to.searchController.value.text.isEmpty) {
+      body.remove('search');
+    }
+    if (initialCall) {
+      productList.clear();
+      pListStatus.value = LoadingStatus.loading;
+    } else {
+      pListStatus.value = LoadingStatus.loadingMore;
+    }
+    try {
+      final data = await ProductService.productListCallWithFilter(body,
+          paginationUrl: initialCall ? null : paginationUrl.value);
+      if (initialCall) {
+        productList.value = data;
+        pListStatus.value = LoadingStatus.loaded;
+      } else {
+        productList.addAll(data);
+        pListStatus.value = LoadingStatus.loaded;
+      }
+    } catch (e) {
+      pListStatus.value = LoadingStatus.error;
+    }
+  }
+
+  Future<void> productListCallWithNameCall(dynamic body,
+      {bool initialCall = true}) async {
+    productAPIType.value = ProductAPIType.search;
+    body.addAll({'pagination': '6'});
+
+    if (NavigationController.to.searchController.value.text.isEmpty) {
+      body.remove('search');
+    }
+    if (initialCall) {
+      productList.clear();
+      pListStatus.value = LoadingStatus.loading;
+    } else {
+      pListStatus.value = LoadingStatus.loadingMore;
+    }
+    try {
+      final data = await ProductService.productListCallWithName(body,
+          paginationUrl: initialCall ? null : paginationUrl.value);
+      if (initialCall) {
+        productList.value = data[NameSearchResponse.product]!;
+        searchList.value = data[NameSearchResponse.product]!;
+        catList.value = data[NameSearchResponse.category]!;
+        searchBrandList.value = data[NameSearchResponse.brand]!;
+        pListStatus.value = LoadingStatus.loaded;
+      } else {
+        productList.addAll(data[NameSearchResponse.product]!);
+        pListStatus.value = LoadingStatus.loaded;
+      }
+    } catch (e) {
+      pListStatus.value = LoadingStatus.error;
+    }
+  }
+
+  //trendingSearchList
+  Future<void> trendingSearchListCall() async {
+    trendingSearchList.value = await ProductService.trendingSearchList();
   }
 
   Future<void> singleBlogListCall(String? blogId) async {
     singleBlog.value = await HomeService.singleBlogCall(blogId);
-    globalLogger.d(singleBlog.value.title, 'singleBlogList.value.title');
+    globalLogger.d(singleBlog.value.title);
   }
 
-  Future<bool> addCouponCode(String couponCode) async {
-    final isCreated = await HomeService.addCuponCode({'coupon_code': couponCode});
-    if (isCreated) {
+  Future<bool> addCouponCode(String coupon) async {
+    couponInfo.value = await HomeService.addCouponCode({'coupon_code': coupon});
+    if (couponInfo.value.couponCode != null) {
+      if (UserController.to
+              .cartTotalPrice() /* - UserController.to.cartTotalDiscountPrice()*/ <
+          couponInfo.value.minimumExpenses!.toDouble()) {
+        showSnackBar(
+            msg:
+                'Minimum order amount should be ${couponInfo.value.minimumExpenses} to apply this coupon.');
+        return false;
+      }
+      changeRewardPointApply();
+
+      couponCode.value = coupon;
+      CartController.to.couponController.text = '';
       showSnackBar(
         msg: 'Coupon Added successfully.',
       );
       Get.back();
       // afterLogin(isCreated);
     }
-    return isCreated;
+    return couponInfo.value.couponCode != null;
+  }
+
+  changeRewardPointApply() {
+    if (rewardPointApply.value != '0') {
+      if ((rewardPointApply.value.toInt() /
+              HomeApiController.to.rewardPointInfo.value.rewardPoint!.toInt() *
+              HomeApiController.to.rewardPointInfo.value.rewardPointValue!
+                  .toInt()) >
+          (UserController.to
+                  .cartTotalPrice() /* -
+              UserController.to.cartTotalDiscountPrice()*/
+              -
+              UserController.to.upToDiscount.value.toDouble() -
+              (couponInfo.value.amount ?? '0').toDouble())) {
+        final tk = UserController.to
+                .cartTotalPrice() /*-
+            UserController.to.cartTotalDiscountPrice()*/
+            -
+            UserController.to.upToDiscount.value.toDouble() -
+            (couponInfo.value.amount ?? '0').toDouble();
+        rewardPointApply.value = ((tk /
+                    HomeApiController.to.rewardPointInfo.value.rewardPointValue!
+                        .toInt()) *
+                HomeApiController.to.rewardPointInfo.value.rewardPoint!.toInt())
+            .floor()
+            .toStringAsFixed(0);
+      }
+    }
+  }
+
+  //check reward point apply or not and reward point exceed to total price or not
+  Future<void> checkRewardPointApply(String rewardPoint) async {
+    if (rewardPoint.isNotEmpty) {
+      if (rewardPoint.toInt() >
+          UserController.to.getUserInfo.rewardPoints!.toInt()) {
+        showSnackBar(
+            msg:
+                'You have only ${UserController.to.getUserInfo.rewardPoints} reward points!');
+        return;
+      }
+      rewardPointApply.value = rewardPoint;
+      CartController.to.couponController.text = '';
+      showSnackBar(
+        msg: 'Reward Point Added successfully.',
+      );
+      Get.back();
+    }
+  }
+
+  //rewardPointCall
+  Future<void> rewardPointCall() async {
+    rewardPointInfo.value = await HomeService.rewardPointCall();
+  }
+
+  //shippingCall
+  Future<void> shippingCall() async {
+    shippingInfo.value = await HomeService.shippingCall();
   }
 
   void _addSuspensionTag(List<BrandModel> list) {
@@ -210,5 +475,27 @@ class HomeApiController extends GetxController {
       path: phoneNumber,
     );
     await launchUrl(launchUri);
+  }
+
+  Future<void> filterDataCall() async {
+    await preferenceListCall();
+    await formulationListCall();
+    await finishListCall();
+    await countryListCall();
+    await genderListCall();
+    await coverageListCall();
+    await skinTypeListCall();
+    await benefitListCall();
+    await concernListCall();
+    await ingredientListCall();
+    await packSizeListCall();
+    await brandListCall();
+    await termsConditionCall();
+    await privacyPolicyCall();
+    await returnRefundCall();
+    await colorListCall();
+    await outletListCall();
+    await shadeListCall();
+    await sizeListCall();
   }
 }

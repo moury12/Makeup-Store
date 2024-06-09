@@ -28,6 +28,7 @@ import 'package:perfecto/pages/outlets/oulet_page.dart';
 import 'package:perfecto/pages/outlets/outlet_details_page.dart';
 import 'package:perfecto/pages/page_with_navigation.dart';
 import 'package:perfecto/pages/points/my_points_page.dart';
+import 'package:perfecto/pages/product-details/combo_details_page.dart';
 import 'package:perfecto/pages/product-details/product_details_binding.dart';
 import 'package:perfecto/pages/product-details/product_details_page.dart';
 import 'package:perfecto/pages/product-details/product_discription_page.dart';
@@ -74,7 +75,7 @@ class AppRoutes {
         ),
         GetPage(name: ProfileScreen.routeName, page: () => const ProfileScreen(), binding: ProfileBinding()),
         GetPage(name: ChatScreen.routeName, page: () => const ChatScreen(), binding: ChatBinding()),
-        GetPage(name: SingleCatergoryWiseScreen.routeName, page: () => const SingleCatergoryWiseScreen(), binding: CategoryBinding()),
+        GetPage(name: SingleCategoryWiseScreen.routeName, page: () => const SingleCategoryWiseScreen(), binding: CategoryBinding()),
         GetPage(name: OfferScreen.routeName, page: () => const OfferScreen(), binding: OfferBinding()),
         GetPage(name: ChangePasswordScreen.routeName, page: () => const ChangePasswordScreen(), binding: AuthBinding()),
         GetPage(name: OfferScreenNew.routeName, page: () => const OfferScreenNew(), binding: OfferBinding()),
@@ -83,6 +84,7 @@ class AppRoutes {
         GetPage(name: OutletDetailsScreen.routeName, page: () => const OutletDetailsScreen(), binding: OfferBinding()),
         GetPage(name: OfferDetailsScreen.routeName, page: () => const OfferDetailsScreen(), binding: OfferBinding()),
         GetPage(name: ProductDetailsScreen.routeName, page: () => const ProductDetailsScreen(), binding: ProductDetailsBinding()),
+        GetPage(name: ComboDetailsScreen.routeName, page: () => const ComboDetailsScreen(), binding: ProductDetailsBinding()),
         GetPage(name: ProductShadeScreen.routeName, page: () => const ProductShadeScreen(), binding: ProductDetailsBinding()),
         GetPage(name: ProductDescriptionScreen.routeName, page: () => const ProductDescriptionScreen(), binding: ProductDetailsBinding()),
         GetPage(name: VerifiedUserScreen.routeName, page: () => const VerifiedUserScreen(), binding: ProductDetailsBinding()),
@@ -139,7 +141,10 @@ class AppRoutes {
           name: BlogDetailsScreen.routeName,
           page: () => const BlogDetailsScreen(),
         ),
-        GetPage(name: MyAddressScreen.routeName, page: () => const MyAddressScreen(), binding: AddressBinding()),
+        GetPage(
+          name: MyAddressScreen.routeName,
+          page: () => const MyAddressScreen(), /* binding: AddressBinding()*/
+        ),
         GetPage(
           name: AddNewAddressScreen.routeName,
           page: () => const AddNewAddressScreen(), /* binding: ProfileBinding()*/
